@@ -37,11 +37,33 @@ int points = 0;
 int game_over = 0;
 int game_play = 0;
 int mainmenu = 1;
+int highscore_menu = 0;
 int howtoplay = 0;
 int life = 5;
 
+int highScore = 0;
+
 double mousex;
 double mousey;
+
+void loadHighScore() {
+    FILE *file = fopen("highscore.txt", "r");
+    if(file != NULL) {
+        fscanf(file, "%d", &highScore);
+        fclose(file);
+    }
+    else {
+        highScore = 0;
+    }
+}
+
+void saveHighScore() {
+    FILE *file = fopen("highscore.txt", "w");
+    if(file != NULL) {
+        fprintf(file, "%d", highScore);
+        fclose(file);
+    }
+}
 
 void renderBitmapString(float x, float y, void *font,const char *string){
     const char *c;
@@ -73,31 +95,45 @@ void MainMenu(){
     renderBitmapString(0.5f, 0.8f, GLUT_BITMAP_TIMES_ROMAN_24, "Start Game");
 
     glBegin(GL_LINES);
-        glVertex2f(0.3f, -0.1f);
-        glVertex2f(0.3f, 0.2f);
-        glVertex2f(0.3f, -0.1f);
-        glVertex2f(1.5f, -0.1f);
-        glVertex2f(0.3f, 0.2f);
-        glVertex2f(1.5f, 0.2f);
-        glVertex2f(1.5f, -0.1f);
-        glVertex2f(1.5f, 0.2f);
+        glVertex2f(0.3f, 0.3f);
+        glVertex2f(0.3f, 0.6f);
+        glVertex2f(0.3f, 0.3f);
+        glVertex2f(1.5f, 0.3f);
+        glVertex2f(0.3f, 0.6f);
+        glVertex2f(1.5f, 0.6f);
+        glVertex2f(1.5f, 0.3f);
+        glVertex2f(1.5f, 0.6f);
     glEnd();
 
-    renderBitmapString(0.5f, 0.0f, GLUT_BITMAP_TIMES_ROMAN_24, "Instruction");
+    renderBitmapString(0.5f, 0.45f, GLUT_BITMAP_TIMES_ROMAN_24, "Instruction");
 
     glBegin(GL_LINES);
-        glVertex2f(0.3f, -0.9f);
-        glVertex2f(0.3f, -0.6f);
-        glVertex2f(0.3f, -0.9f);
-        glVertex2f(1.5f, -0.9f);
-        glVertex2f(0.3f, -0.6f);
-        glVertex2f(1.5f, -0.6f);
-        glVertex2f(1.5f, -0.9f);
-        glVertex2f(1.5f, -0.6f);
+        glVertex2f(0.3f, -0.1f);
+        glVertex2f(0.3f, 0.2f);
+        glVertex2f(0.3f, -0.1f);
+        glVertex2f(1.5f, -0.1f);
+        glVertex2f(0.3f, 0.2f);
+        glVertex2f(1.5f, 0.2f);
+        glVertex2f(1.5f, -0.1f);
+        glVertex2f(1.5f, 0.2f);
     glEnd();
 
-    renderBitmapString(0.5f, -0.8f, GLUT_BITMAP_TIMES_ROMAN_24, "Exit");
+    renderBitmapString(0.5f, 0.05f, GLUT_BITMAP_TIMES_ROMAN_24, "High Score");
+
+    glBegin(GL_LINES);
+        glVertex2f(0.3f, -0.5f);
+        glVertex2f(0.3f, -0.2f);
+        glVertex2f(0.3f, -0.5f);
+        glVertex2f(1.5f, -0.5f);
+        glVertex2f(0.3f, -0.2f);
+        glVertex2f(1.5f, -0.2f);
+        glVertex2f(1.5f, -0.5f);
+        glVertex2f(1.5f, -0.2f);
+    glEnd();
+
+    renderBitmapString(0.5f, -0.35f, GLUT_BITMAP_TIMES_ROMAN_24, "Exit");
 }
+
 
 void instruction(){
     glColor3f(1.0f,1.0f,1.0f);
@@ -123,15 +159,62 @@ void instruction(){
 	renderBitmapString(-0.2f,-1.4f,GLUT_BITMAP_TIMES_ROMAN_24,"BACK");
 }
 
+void highScoreMenu(){
+    glColor3f(1.0f,1.0f,1.0f);
+    renderBitmapString(-0.6f, 1.5f, GLUT_BITMAP_TIMES_ROMAN_24, "HIGH SCORE");
+
+    renderBitmapString(-0.5f, 0.8f, GLUT_BITMAP_TIMES_ROMAN_24, "Best Score: ");
+    char str[80];
+    sprintf(str,"%d", highScore);
+    for(int i=0; i<(int)(strlen(str)); i++)
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, str[i]);
+
+    glBegin(GL_LINES);
+        glVertex2f(-0.8f, 0.2f);
+        glVertex2f(-0.8f, 0.5f);
+        glVertex2f(-0.8f, 0.2f);
+        glVertex2f(0.8f, 0.2f);
+        glVertex2f(-0.8f, 0.5f);
+        glVertex2f(0.8f, 0.5f);
+        glVertex2f(0.8f, 0.2f);
+        glVertex2f(0.8f, 0.5f);
+    glEnd();
+
+    renderBitmapString(-0.3f, 0.3f, GLUT_BITMAP_TIMES_ROMAN_24, "RESET");
+
+    glBegin(GL_LINES);
+        glVertex2f(-0.6f, -1.5f);
+        glVertex2f(-0.6f, -1.2f);
+        glVertex2f(-0.6f, -1.5f);
+        glVertex2f(0.6f, -1.5f);
+        glVertex2f(-0.6f, -1.2f);
+        glVertex2f(0.6f, -1.2f);
+        glVertex2f(0.6f, -1.5f);
+        glVertex2f(0.6f, -1.2f);
+    glEnd();
+
+    renderBitmapString(-0.2f, -1.4f, GLUT_BITMAP_TIMES_ROMAN_24, "BACK");
+}
+
 void gameOver(){
     glColor3f(1.0f,1.0f,1.0f);
-    renderBitmapString(-0.5f,0.7f,GLUT_BITMAP_TIMES_ROMAN_24,"GAME OVER");
-    renderBitmapString(-0.5f,0.5f,GLUT_BITMAP_TIMES_ROMAN_24,"SCORE : ");
+    renderBitmapString(-0.5f,0.9f,GLUT_BITMAP_TIMES_ROMAN_24,"GAME OVER");
 
+    renderBitmapString(-0.5f,0.6f,GLUT_BITMAP_TIMES_ROMAN_24,"SCORE : ");
     char str[80];
-	sprintf(str,"%d",points);
-	for(int i=0;i<(int)(strlen(str));i++)
-		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,str[i]);
+    sprintf(str,"%d",points);
+    for(int i=0;i<(int)(strlen(str));i++)
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,str[i]);
+
+    if(points > highScore){
+        highScore = points;
+        saveHighScore();
+    }
+
+    renderBitmapString(-0.5f,0.4f,GLUT_BITMAP_TIMES_ROMAN_24,"HIGH SCORE : ");
+    sprintf(str,"%d",highScore);
+    for(int i=0;i<(int)(strlen(str));i++)
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,str[i]);
 
     glBegin(GL_LINES);
         glVertex2f(-0.6f,-0.5f);
@@ -150,6 +233,44 @@ void gameOver(){
     cnt=0;
     high=-1;
 }
+
+void drawShooter(){
+    glColor3f(0.0,1.0,0.0);
+    glBegin(GL_TRIANGLES);
+        glVertex2f(0.0f,0.2f);
+        glVertex2f(-0.15f,-0.1f);
+        glVertex2f(0.15f,-0.1f);
+    glEnd();
+}
+
+void handleSpecialKeypress(int key, int x, int y){
+    if (key == GLUT_KEY_LEFT){
+        if(shooter_x > shooter_min_x){
+            shooter_x -= 0.05;
+        }
+    }
+    else if (key == GLUT_KEY_RIGHT){
+        if(shooter_x < shooter_max_x){
+            shooter_x += 0.05;
+        }
+    }
+}
+
+void drawBullet(){
+	glPushMatrix();
+        glutSolidSphere(0.03,50,50);
+    glPopMatrix();
+}
+
+void drawEnemy(){
+    glColor3f(1.0,0.0,0.0);
+    glBegin(GL_TRIANGLES);
+        glVertex2f(0.0f,0.1f);
+        glVertex2f(-0.08f,-0.08f);
+        glVertex2f(0.08f,-0.08f);
+    glEnd();
+}
+
 
 void generateEnemies(){
     if(frontCount==-1){
@@ -173,15 +294,6 @@ void generateEnemies(){
 	}
 }
 
-void drawEnemy(){
-    glColor3f(1.0,0.0,0.0);
-    glBegin(GL_TRIANGLES);
-        glVertex2f(0.0f,0.1f);
-        glVertex2f(-0.08f,-0.08f);
-        glVertex2f(0.08f,-0.08f);
-    glEnd();
-}
-
 void score(){
 	glColor3f(1.0f,1.0f,1.0f);
     renderBitmapString(1.2f,1.8f,GLUT_BITMAP_HELVETICA_18,"SCORE :  ");
@@ -191,13 +303,39 @@ void score(){
 		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,str[i]);
 }
 
+void drawHeart(float x, float y, float size){
+    glColor3f(1.0f, 0.0f, 0.0f);
+
+    glPushMatrix();
+    glTranslatef(x, y, 0.0f);
+    glScalef(size, size, 1.0f);
+
+    glBegin(GL_TRIANGLES);
+        glVertex2f(0.0f, -0.08f);
+        glVertex2f(-0.06f, 0.02f);
+        glVertex2f(0.06f, 0.02f);
+    glEnd();
+
+    glPushMatrix();
+    glTranslatef(-0.03f, 0.03f, 0.0f);
+    glutSolidSphere(0.03, 10, 10);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(0.03f, 0.03f, 0.0f);
+    glutSolidSphere(0.03, 10, 10);
+    glPopMatrix();
+
+    glPopMatrix();
+}
+
 void showLife(){
 	glColor3f(1.0f,1.0f,1.0f);
     renderBitmapString(-2.6f,1.8f,GLUT_BITMAP_HELVETICA_18,"LIFE :  ");
-	char str[80];
-	sprintf(str,"%d",life);
-	for(int i=0;i<(int)(strlen(str));i++)
-		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,str[i]);
+
+    for(int i = 0; i < life && i < 5; i++){
+        drawHeart(-1.8f + (i * 0.15f), 1.8f, 1.0f);
+    }
 }
 
 void getCoord(int x, int y){
@@ -234,16 +372,21 @@ void handleMouseclick(int button, int state, int x, int y){
             high = -1;
         }
 
-        else if(mousex >= 0.3 && mousex <= 1.5 && mousey >= -0.1 && mousey <= 0.2){
+        else if(mousex >= 0.3 && mousex <= 1.5 && mousey >= 0.3 && mousey <= 0.6){
               mainmenu = 0;
               howtoplay = 1;
-
         }
 
-        else if(mousex >= 0.3 && mousex <= 1.5 && mousey >= -0.9 && mousey <= -0.6){
+        else if(mousex >= 0.3 && mousex <= 1.5 && mousey >= -0.1 && mousey <= 0.2){
+              mainmenu = 0;
+              highscore_menu = 1;
+        }
+
+        else if(mousex >= 0.3 && mousex <= 1.5 && mousey >= -0.5 && mousey <= -0.2){
             exit(0);
         }
     }
+
     else if (button == GLUT_LEFT_BUTTON && game_play==0 && mainmenu==0 && howtoplay==1){
         getCoord(x,y);
         if(mousex>=-0.6 && mousex<=0.6 && mousey>=-1.5 && mousey<=-1.2){
@@ -251,6 +394,20 @@ void handleMouseclick(int button, int state, int x, int y){
             howtoplay=0;
         }
     }
+
+    else if (button == GLUT_LEFT_BUTTON && game_play==0 && mainmenu==0 && highscore_menu==1){
+        getCoord(x,y);
+        if(mousex>=-0.6 && mousex<=0.6 && mousey>=-1.5 && mousey<=-1.2){
+            mainmenu=1;
+            highscore_menu=0;
+        }
+        else if(mousex>=-0.8 && mousex<=0.8 && mousey>=0.2 && mousey<=0.5){
+            highScore = 0;
+            saveHighScore();
+            glutPostRedisplay();
+        }
+    }
+
     else if (button == GLUT_LEFT_BUTTON && game_play==0 && mainmenu==0 && game_over==1){
         getCoord(x,y);
         if(mousex>=-0.6 && mousex<=0.6 && mousey>=-0.5 && mousey<=-0.2){
@@ -261,7 +418,6 @@ void handleMouseclick(int button, int state, int x, int y){
         }
     }
 }
-
 void handleResize(int w, int h) {
     int winw = w;
     int winh = h;
@@ -307,33 +463,7 @@ void handleKeypress(unsigned char key, int x, int y){
 	}
 }
 
-void drawShooter(){
-    glColor3f(0.0,1.0,0.0);
-    glBegin(GL_TRIANGLES);
-        glVertex2f(0.0f,0.2f);
-        glVertex2f(-0.15f,-0.1f);
-        glVertex2f(0.15f,-0.1f);
-    glEnd();
-}
 
-void handleSpecialKeypress(int key, int x, int y){
-    if (key == GLUT_KEY_LEFT){
-        if(shooter_x > shooter_min_x){
-            shooter_x -= 0.05;
-        }
-    }
-    else if (key == GLUT_KEY_RIGHT){
-        if(shooter_x < shooter_max_x){
-            shooter_x += 0.05;
-        }
-    }
-}
-
-void drawBullet(){
-	glPushMatrix();
-        glutSolidSphere(0.03,50,50);
-    glPopMatrix();
-}
 
 void new_update(int value){
     for(int i=0;i<=frontCount;i++){
@@ -410,6 +540,12 @@ void drawScene(){
             instruction();
         glPopMatrix();
     }
+    else if(highscore_menu == 1){
+        glPushMatrix();
+            glTranslatef(0.0f, 0.0f, -5.0f);
+            highScoreMenu();
+        glPopMatrix();
+    }
     else if(game_over == 1){
         glPushMatrix();
             glTranslatef(0.0f, 0.0f, -5.0f);
@@ -464,6 +600,7 @@ int main(int argc, char **argv){
     glutInitWindowSize(1000, 700);
     glutInitWindowPosition(220, 50);
     glutCreateWindow("Space Shooter Game");
+    loadHighScore();
     glutDisplayFunc(drawScene);
     glutIdleFunc(drawScene);
     glutKeyboardFunc(handleKeypress);
