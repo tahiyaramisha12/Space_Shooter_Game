@@ -1,8 +1,7 @@
 # depslib dependency file v1.0
-1758800435 source:e:\l-3 s-1\computer graphics\lab work\project opengl\space_shooter\main.cpp
+1758891661 source:e:\l-3 s-1\computer graphics\lab work\project opengl\space_shooter\main.cpp
 	<GL/gl.h>
 	<GL/glut.h>
-	<iostream>
 	<stdlib.h>
 	<string.h>
 	<stdio.h>

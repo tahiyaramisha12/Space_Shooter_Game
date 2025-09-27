@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 #define SZ 100000
 
@@ -30,7 +31,7 @@ double enemy_x[SZ];
 double enemy_y[SZ];
 double enemy_vel[SZ];
 double enemy_stat[SZ] = {0};
-double enemy_col[SZ];
+int enemy_type[SZ];
 int frontCount = -1, cnt = 0;
 
 int points = 0;
@@ -42,6 +43,9 @@ int howtoplay = 0;
 int life = 5;
 
 int highScore = 0;
+
+int level = 1;
+int pointsForNextLevel = 10;
 
 double mousex;
 double mousey;
@@ -134,7 +138,6 @@ void MainMenu(){
     renderBitmapString(0.5f, -0.35f, GLUT_BITMAP_TIMES_ROMAN_24, "Exit");
 }
 
-
 void instruction(){
     glColor3f(1.0f,1.0f,1.0f);
     renderBitmapString(-0.4f,1.7f,GLUT_BITMAP_TIMES_ROMAN_24,"HOW TO PLAY");
@@ -155,7 +158,8 @@ void instruction(){
 	renderBitmapString(-2.7f,1.0f,GLUT_BITMAP_HELVETICA_18,"3. Press Space to key to Shoot");
 	renderBitmapString(-2.7f,0.8f,GLUT_BITMAP_HELVETICA_18,"4. Kill the enemy and 1 point will be added to the score");
 	renderBitmapString(-2.7f,0.6f,GLUT_BITMAP_HELVETICA_18,"5. If enemy passes you, 1 life will be lost");
-	renderBitmapString(-2.7f,0.4f,GLUT_BITMAP_HELVETICA_18,"6. Press ESC to exit the game");
+    renderBitmapString(-2.7f,0.4f,GLUT_BITMAP_HELVETICA_18,"6. Every 10 points, you advance to the next level");
+	renderBitmapString(-2.7f,0.2f,GLUT_BITMAP_HELVETICA_18,"6. Press ESC to exit the game");
 	renderBitmapString(-0.2f,-1.4f,GLUT_BITMAP_TIMES_ROMAN_24,"BACK");
 }
 
@@ -182,6 +186,7 @@ void highScoreMenu(){
 
     renderBitmapString(-0.3f, 0.3f, GLUT_BITMAP_TIMES_ROMAN_24, "RESET");
 
+
     glBegin(GL_LINES);
         glVertex2f(-0.6f, -1.5f);
         glVertex2f(-0.6f, -1.2f);
@@ -206,12 +211,17 @@ void gameOver(){
     for(int i=0;i<(int)(strlen(str));i++)
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,str[i]);
 
+    renderBitmapString(-0.5f,0.4f,GLUT_BITMAP_TIMES_ROMAN_24,"LEVEL REACHED : ");
+    sprintf(str,"%d",level);
+    for(int i=0;i<(int)(strlen(str));i++)
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,str[i]);
+
     if(points > highScore){
         highScore = points;
         saveHighScore();
     }
 
-    renderBitmapString(-0.5f,0.4f,GLUT_BITMAP_TIMES_ROMAN_24,"HIGH SCORE : ");
+    renderBitmapString(-0.5f,0.2f,GLUT_BITMAP_TIMES_ROMAN_24,"HIGH SCORE : ");
     sprintf(str,"%d",highScore);
     for(int i=0;i<(int)(strlen(str));i++)
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,str[i]);
@@ -234,44 +244,6 @@ void gameOver(){
     high=-1;
 }
 
-void drawShooter(){
-    glColor3f(0.0,1.0,0.0);
-    glBegin(GL_TRIANGLES);
-        glVertex2f(0.0f,0.2f);
-        glVertex2f(-0.15f,-0.1f);
-        glVertex2f(0.15f,-0.1f);
-    glEnd();
-}
-
-void handleSpecialKeypress(int key, int x, int y){
-    if (key == GLUT_KEY_LEFT){
-        if(shooter_x > shooter_min_x){
-            shooter_x -= 0.05;
-        }
-    }
-    else if (key == GLUT_KEY_RIGHT){
-        if(shooter_x < shooter_max_x){
-            shooter_x += 0.05;
-        }
-    }
-}
-
-void drawBullet(){
-	glPushMatrix();
-        glutSolidSphere(0.03,50,50);
-    glPopMatrix();
-}
-
-void drawEnemy(){
-    glColor3f(1.0,0.0,0.0);
-    glBegin(GL_TRIANGLES);
-        glVertex2f(0.0f,0.1f);
-        glVertex2f(-0.08f,-0.08f);
-        glVertex2f(0.08f,-0.08f);
-    glEnd();
-}
-
-
 void generateEnemies(){
     if(frontCount==-1){
         cnt=0;
@@ -286,12 +258,305 @@ void generateEnemies(){
                 enemy_y[i]=2.3f;
 				enemy_vel[i]=0.003f + 3*((rand()%10*1.0f)/10000);
 				enemy_stat[i]=0;
-				enemy_col[i]=rand()%3;
+				enemy_type[i] = rand() % 10;
 				frontCount++;
 				cnt++;
 			}
 		}
 	}
+}
+
+void drawEnemy(int type){
+    float scale = 1.0f;
+
+    switch(type) {
+        case 0: // Classic Space Invader
+            glColor3f(0.0f, 1.0f, 1.0f);
+            glBegin(GL_QUADS);
+                glVertex2f(-0.06f*scale, 0.06f*scale);
+                glVertex2f(0.06f*scale, 0.06f*scale);
+                glVertex2f(0.06f*scale, -0.02f*scale);
+                glVertex2f(-0.06f*scale, -0.02f*scale);
+
+                glVertex2f(-0.08f*scale, 0.02f*scale);
+                glVertex2f(-0.06f*scale, 0.02f*scale);
+                glVertex2f(-0.06f*scale, -0.06f*scale);
+                glVertex2f(-0.08f*scale, -0.06f*scale);
+
+                glVertex2f(0.06f*scale, 0.02f*scale);
+                glVertex2f(0.08f*scale, 0.02f*scale);
+                glVertex2f(0.08f*scale, -0.06f*scale);
+                glVertex2f(0.06f*scale, -0.06f*scale);
+            glEnd();
+            glColor3f(0.0f, 0.0f, 0.0f);
+            glBegin(GL_QUADS);
+                glVertex2f(-0.04f*scale, 0.02f*scale);
+                glVertex2f(-0.02f*scale, 0.02f*scale);
+                glVertex2f(-0.02f*scale, 0.04f*scale);
+                glVertex2f(-0.04f*scale, 0.04f*scale);
+
+                glVertex2f(0.02f*scale, 0.02f*scale);
+                glVertex2f(0.04f*scale, 0.02f*scale);
+                glVertex2f(0.04f*scale, 0.04f*scale);
+                glVertex2f(0.02f*scale, 0.04f*scale);
+            glEnd();
+            break;
+
+        case 1: // Octopus-like
+            glColor3f(1.0f, 0.2f, 0.2f);
+            glBegin(GL_POLYGON);
+                glVertex2f(0.0f*scale, 0.08f*scale);
+                glVertex2f(-0.04f*scale, 0.06f*scale);
+                glVertex2f(-0.06f*scale, 0.02f*scale);
+                glVertex2f(-0.06f*scale, -0.02f*scale);
+                glVertex2f(-0.04f*scale, -0.06f*scale);
+                glVertex2f(-0.02f*scale, -0.08f*scale);
+                glVertex2f(0.02f*scale, -0.08f*scale);
+                glVertex2f(0.04f*scale, -0.06f*scale);
+                glVertex2f(0.06f*scale, -0.02f*scale);
+                glVertex2f(0.06f*scale, 0.02f*scale);
+                glVertex2f(0.04f*scale, 0.06f*scale);
+            glEnd();
+            glBegin(GL_QUADS);
+                for(int i = -2; i <= 2; i++) {
+                    glVertex2f((i*0.02f-0.01f)*scale, -0.06f*scale);
+                    glVertex2f((i*0.02f+0.01f)*scale, -0.06f*scale);
+                    glVertex2f((i*0.02f+0.01f)*scale, -0.1f*scale);
+                    glVertex2f((i*0.02f-0.01f)*scale, -0.1f*scale);
+                }
+            glEnd();
+            break;
+
+        case 2: // Crab-like
+            glColor3f(1.0f, 0.5f, 0.0f);
+            glBegin(GL_POLYGON);
+                glVertex2f(-0.05f*scale, 0.06f*scale);
+                glVertex2f(0.05f*scale, 0.06f*scale);
+                glVertex2f(0.07f*scale, 0.02f*scale);
+                glVertex2f(0.05f*scale, -0.04f*scale);
+                glVertex2f(-0.05f*scale, -0.04f*scale);
+                glVertex2f(-0.07f*scale, 0.02f*scale);
+            glEnd();
+
+            glBegin(GL_TRIANGLES);
+                glVertex2f(-0.07f*scale, 0.04f*scale);
+                glVertex2f(-0.1f*scale, 0.06f*scale);
+                glVertex2f(-0.09f*scale, 0.02f*scale);
+
+                glVertex2f(0.07f*scale, 0.04f*scale);
+                glVertex2f(0.1f*scale, 0.06f*scale);
+                glVertex2f(0.09f*scale, 0.02f*scale);
+            glEnd();
+            break;
+
+        case 3: // Squid-like Enemy
+            glColor3f(0.6f, 0.2f, 0.8f);
+            glBegin(GL_QUADS);
+                glVertex2f(-0.05f*scale, 0.08f*scale);
+                glVertex2f(0.05f*scale, 0.08f*scale);
+                glVertex2f(0.05f*scale, 0.02f*scale);
+                glVertex2f(-0.05f*scale, 0.02f*scale);
+            glEnd();
+
+            glBegin(GL_QUADS);
+                glVertex2f(-0.03f*scale, 0.08f*scale);
+                glVertex2f(-0.01f*scale, 0.08f*scale);
+                glVertex2f(-0.01f*scale, 0.1f*scale);
+                glVertex2f(-0.03f*scale, 0.1f*scale);
+
+                glVertex2f(0.01f*scale, 0.08f*scale);
+                glVertex2f(0.03f*scale, 0.08f*scale);
+                glVertex2f(0.03f*scale, 0.1f*scale);
+                glVertex2f(0.01f*scale, 0.1f*scale);
+            glEnd();
+
+            glColor3f(0.0f, 0.0f, 0.0f);
+            glBegin(GL_QUADS);
+                glVertex2f(-0.04f*scale, 0.04f*scale);
+                glVertex2f(-0.02f*scale, 0.04f*scale);
+                glVertex2f(-0.02f*scale, 0.06f*scale);
+                glVertex2f(-0.04f*scale, 0.06f*scale);
+
+                glVertex2f(0.02f*scale, 0.04f*scale);
+                glVertex2f(0.04f*scale, 0.04f*scale);
+                glVertex2f(0.04f*scale, 0.06f*scale);
+                glVertex2f(0.02f*scale, 0.06f*scale);
+            glEnd();
+
+            glColor3f(0.6f, 0.2f, 0.8f);
+            glBegin(GL_QUADS);
+                glVertex2f(-0.06f*scale, 0.02f*scale);
+                glVertex2f(-0.04f*scale, 0.02f*scale);
+                glVertex2f(-0.05f*scale, -0.04f*scale);
+                glVertex2f(-0.07f*scale, -0.04f*scale);
+
+                glVertex2f(-0.05f*scale, -0.04f*scale);
+                glVertex2f(-0.03f*scale, -0.04f*scale);
+                glVertex2f(-0.02f*scale, -0.08f*scale);
+                glVertex2f(-0.04f*scale, -0.08f*scale);
+
+                glVertex2f(-0.02f*scale, 0.02f*scale);
+                glVertex2f(0.0f*scale, 0.02f*scale);
+                glVertex2f(0.01f*scale, -0.04f*scale);
+                glVertex2f(-0.01f*scale, -0.04f*scale);
+
+                glVertex2f(0.01f*scale, -0.04f*scale);
+                glVertex2f(0.03f*scale, -0.04f*scale);
+                glVertex2f(0.04f*scale, -0.08f*scale);
+                glVertex2f(0.02f*scale, -0.08f*scale);
+
+                glVertex2f(0.0f*scale, 0.02f*scale);
+                glVertex2f(0.02f*scale, 0.02f*scale);
+                glVertex2f(0.01f*scale, -0.04f*scale);
+                glVertex2f(-0.01f*scale, -0.04f*scale);
+
+                glVertex2f(0.04f*scale, 0.02f*scale);
+                glVertex2f(0.06f*scale, 0.02f*scale);
+                glVertex2f(0.07f*scale, -0.04f*scale);
+                glVertex2f(0.05f*scale, -0.04f*scale);
+
+                glVertex2f(0.05f*scale, -0.04f*scale);
+                glVertex2f(0.07f*scale, -0.04f*scale);
+                glVertex2f(0.08f*scale, -0.08f*scale);
+                glVertex2f(0.06f*scale, -0.08f*scale);
+            glEnd();
+            break;
+
+        case 4: // Spider-like
+            glColor3f(0.6f, 0.2f, 0.8f);
+
+            glBegin(GL_POLYGON);
+                for(int i = 0; i < 8; i++) {
+                    float angle = 2.0f * 3.14159f * i / 8;
+                    glVertex2f(0.04f*scale*cos(angle), 0.04f*scale*sin(angle));
+                }
+            glEnd();
+
+            glBegin(GL_LINES);
+                glLineWidth(2);
+                for(int i = 0; i < 8; i++) {
+                    float angle = 2.0f * 3.14159f * i / 8;
+                    glVertex2f(0.04f*scale*cos(angle), 0.04f*scale*sin(angle));
+                    glVertex2f(0.08f*scale*cos(angle), 0.08f*scale*sin(angle));
+                }
+            glEnd();
+            break;
+
+        case 5: // Diamond Enemy
+            glColor3f(1.0f, 1.0f, 0.2f);
+            glBegin(GL_POLYGON);
+                glVertex2f(0.0f*scale, 0.08f*scale);
+                glVertex2f(-0.06f*scale, 0.0f*scale);
+                glVertex2f(0.0f*scale, -0.08f*scale);
+                glVertex2f(0.06f*scale, 0.0f*scale);
+            glEnd();
+
+            glColor3f(0.8f, 0.8f, 0.0f);
+            glBegin(GL_POLYGON);
+                glVertex2f(0.0f*scale, 0.04f*scale);
+                glVertex2f(-0.03f*scale, 0.0f*scale);
+                glVertex2f(0.0f*scale, -0.04f*scale);
+                glVertex2f(0.03f*scale, 0.0f*scale);
+            glEnd();
+            break;
+
+        case 6: // Star Enemy
+            glColor3f(1.0f, 0.4f, 0.8f);
+            glBegin(GL_TRIANGLES);
+                for(int i = 0; i < 5; i++) {
+                    float angle1 = 2.0f * 3.14159f * i / 5 - 3.14159f/2;
+                    float angle2 = 2.0f * 3.14159f * (i+0.5f) / 5 - 3.14159f/2;
+                    float angle3 = 2.0f * 3.14159f * (i+1) / 5 - 3.14159f/2;
+
+                    glVertex2f(0.0f, 0.0f);
+                    glVertex2f(0.09f*scale*cos(angle1), 0.09f*scale*sin(angle1));
+                    glVertex2f(0.045f*scale*cos(angle2), 0.045f*scale*sin(angle2));
+
+                    glVertex2f(0.0f, 0.0f);
+                    glVertex2f(0.045f*scale*cos(angle2), 0.045f*scale*sin(angle2));
+                    glVertex2f(0.09f*scale*cos(angle3), 0.09f*scale*sin(angle3));
+                }
+            glEnd();
+            break;
+
+        case 7: // Hexagon Enemy
+            glColor3f(0.4f, 0.8f, 1.0f);
+            glBegin(GL_POLYGON);
+                for(int i = 0; i < 6; i++) {
+                    float angle = 2.0f * 3.14159f * i / 6;
+                    glVertex2f(0.09f*scale*cos(angle), 0.09f*scale*sin(angle));
+                }
+            glEnd();
+            glColor3f(0.2f, 0.6f, 0.8f);
+            glBegin(GL_POLYGON);
+                for(int i = 0; i < 6; i++) {
+                    float angle = 2.0f * 3.14159f * i / 6;
+                    glVertex2f(0.045f*scale*cos(angle), 0.045f*scale*sin(angle));
+                }
+            glEnd();
+            break;
+
+        case 8: // Spaceship Enemy
+            glColor3f(0.5f, 1.0f, 0.0f);
+            glBegin(GL_POLYGON);
+                glVertex2f(0.0f*scale, 0.08f*scale);
+                glVertex2f(-0.03f*scale, 0.04f*scale);
+                glVertex2f(-0.05f*scale, 0.0f*scale);
+                glVertex2f(-0.03f*scale, -0.06f*scale);
+                glVertex2f(0.03f*scale, -0.06f*scale);
+                glVertex2f(0.05f*scale, 0.0f*scale);
+                glVertex2f(0.03f*scale, 0.04f*scale);
+            glEnd();
+
+            glColor3f(0.4f, 0.8f, 0.0f);
+            glBegin(GL_TRIANGLES);
+                glVertex2f(-0.05f*scale, 0.02f*scale);
+                glVertex2f(-0.09f*scale, 0.0f*scale);
+                glVertex2f(-0.05f*scale, -0.02f*scale);
+
+                // Right wing
+                glVertex2f(0.05f*scale, 0.02f*scale);
+                glVertex2f(0.09f*scale, 0.0f*scale);
+                glVertex2f(0.05f*scale, -0.02f*scale);
+            glEnd();
+
+            glColor3f(0.2f, 0.2f, 0.8f);
+            glBegin(GL_POLYGON);
+                glVertex2f(0.0f*scale, 0.05f*scale);
+                glVertex2f(-0.015f*scale, 0.02f*scale);
+                glVertex2f(0.015f*scale, 0.02f*scale);
+            glEnd();
+
+            glColor3f(1.0f, 0.5f, 0.0f);
+            glBegin(GL_TRIANGLES);
+                glVertex2f(-0.02f*scale, -0.06f*scale);
+                glVertex2f(-0.015f*scale, -0.09f*scale);
+                glVertex2f(-0.01f*scale, -0.06f*scale);
+
+                glVertex2f(0.01f*scale, -0.06f*scale);
+                glVertex2f(0.015f*scale, -0.09f*scale);
+                glVertex2f(0.02f*scale, -0.06f*scale);
+            glEnd();
+            break;
+
+        case 9: // Triangle Swarm
+            glColor3f(0.3f, 0.7f, 1.0f);
+
+            glBegin(GL_TRIANGLES);
+                glVertex2f(0.0f*scale, 0.08f*scale);
+                glVertex2f(-0.06f*scale, -0.04f*scale);
+                glVertex2f(0.06f*scale, -0.04f*scale);
+
+                glVertex2f(-0.04f*scale, 0.02f*scale);
+                glVertex2f(-0.08f*scale, -0.02f*scale);
+                glVertex2f(-0.06f*scale, -0.06f*scale);
+
+                glVertex2f(0.04f*scale, 0.02f*scale);
+                glVertex2f(0.08f*scale, -0.02f*scale);
+                glVertex2f(0.06f*scale, -0.06f*scale);
+            glEnd();
+            break;
+    }
 }
 
 void score(){
@@ -301,6 +566,15 @@ void score(){
 	sprintf(str,"%d",points);
 	for(int i=0;i<(int)(strlen(str));i++)
 		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,str[i]);
+}
+
+void showLevel(){
+    glColor3f(1.0f,1.0f,1.0f);
+    renderBitmapString(-0.5f,1.8f,GLUT_BITMAP_HELVETICA_18,"LEVEL :  ");
+    char str[80];
+    sprintf(str,"%d",level);
+    for(int i=0;i<(int)(strlen(str));i++)
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,str[i]);
 }
 
 void drawHeart(float x, float y, float size){
@@ -367,6 +641,8 @@ void handleMouseclick(int button, int state, int x, int y){
             game_over = 0;
             life = 5;
             points = 0;
+            level = 1;
+            pointsForNextLevel = 10;
             frontCount = -1;
             cnt = 0;
             high = -1;
@@ -415,9 +691,12 @@ void handleMouseclick(int button, int state, int x, int y){
             game_over=0;
             life = 5;
             points=0;
+            level = 1;
+            pointsForNextLevel = 10;
         }
     }
 }
+
 void handleResize(int w, int h) {
     int winw = w;
     int winh = h;
@@ -438,7 +717,7 @@ void handleKeypress(unsigned char key, int x, int y){
 		for(i=0;i<high;i++){
 			if(bullet_stat[i]==0){
 				bullet_x[i]=shooter_x;
-				bullet_y[i]=shooter_y;
+				bullet_y[i]=shooter_y + 0.15;
 				tip_x[i]=bullet_x[i];
 				tip_y[i]=bullet_y[i]+0.2;
 				bullet_vel_x[i]=0;
@@ -451,9 +730,9 @@ void handleKeypress(unsigned char key, int x, int y){
 		if(bullet==0){
 			high++;
 			bullet_x[high]=shooter_x;
-			bullet_y[high]=shooter_y;
+			bullet_y[high]=shooter_y + 0.15;
 			tip_x[high]=shooter_x;
-			tip_y[high]=shooter_y+0.2;
+			tip_y[high]=shooter_y+0.35;
 			bullet_vel_x[high]=0;
 			bullet_vel_y[high]=bullet_vel;
 			bullet_stat[high]=1;
@@ -463,7 +742,141 @@ void handleKeypress(unsigned char key, int x, int y){
 	}
 }
 
+void drawShooter(){
+    float scale = 1.5f;
 
+    glColor3f(0.85, 0.87, 0.9);
+    glBegin(GL_POLYGON);
+        glVertex2f(0.0f * scale, 0.12f * scale);
+        glVertex2f(-0.04f * scale, 0.0f * scale);
+        glVertex2f(-0.04f * scale, -0.08f * scale);
+        glVertex2f(0.04f * scale, -0.08f * scale);
+        glVertex2f(0.04f * scale, 0.0f * scale);
+    glEnd();
+
+    glColor3f(0.2, 0.8, 1.0);
+    glBegin(GL_POLYGON);
+        glVertex2f(0.0f * scale, 0.08f * scale);
+        glVertex2f(-0.02f * scale, 0.02f * scale);
+        glVertex2f(0.02f * scale, 0.02f * scale);
+    glEnd();
+
+    glColor3f(0.6, 0.65, 0.7);
+    glBegin(GL_POLYGON);
+        glVertex2f(-0.04f * scale, 0.02f * scale);
+        glVertex2f(-0.12f * scale, -0.02f * scale);
+        glVertex2f(-0.12f * scale, -0.06f * scale);
+        glVertex2f(-0.04f * scale, -0.04f * scale);
+    glEnd();
+
+    glBegin(GL_POLYGON);
+        glVertex2f(0.04f * scale, 0.02f * scale);
+        glVertex2f(0.12f * scale, -0.02f * scale);
+        glVertex2f(0.12f * scale, -0.06f * scale);
+        glVertex2f(0.04f * scale, -0.04f * scale);
+    glEnd();
+
+    glColor3f(1.0, 0.5, 0.0);
+    glBegin(GL_QUADS);
+        glVertex2f(-0.08f * scale, -0.02f * scale);
+        glVertex2f(-0.06f * scale, -0.02f * scale);
+        glVertex2f(-0.06f * scale, -0.05f * scale);
+        glVertex2f(-0.08f * scale, -0.05f * scale);
+
+        glVertex2f(0.06f * scale, -0.02f * scale);
+        glVertex2f(0.08f * scale, -0.02f * scale);
+        glVertex2f(0.08f * scale, -0.05f * scale);
+        glVertex2f(0.06f * scale, -0.05f * scale);
+    glEnd();
+
+    glColor3f(1.0, 0.6, 0.0);
+    glBegin(GL_TRIANGLES);
+        glVertex2f(-0.08f * scale, -0.08f * scale);
+        glVertex2f(-0.1f * scale, -0.12f * scale);
+        glVertex2f(-0.06f * scale, -0.08f * scale);
+    glEnd();
+
+    glBegin(GL_TRIANGLES);
+        glVertex2f(-0.02f * scale, -0.08f * scale);
+        glVertex2f(-0.025f * scale, -0.12f * scale);
+        glVertex2f(-0.015f * scale, -0.08f * scale);
+    glEnd();
+
+    glBegin(GL_TRIANGLES);
+        glVertex2f(0.015f * scale, -0.08f * scale);
+        glVertex2f(0.025f * scale, -0.12f * scale);
+        glVertex2f(0.02f * scale, -0.08f * scale);
+    glEnd();
+
+    glBegin(GL_TRIANGLES);
+        glVertex2f(0.06f * scale, -0.08f * scale);
+        glVertex2f(0.1f * scale, -0.12f * scale);
+        glVertex2f(0.08f * scale, -0.08f * scale);
+    glEnd();
+
+    glColor3f(1.0, 1.0, 0.3);
+    glBegin(GL_TRIANGLES);
+        glVertex2f(-0.08f * scale, -0.08f * scale);
+        glVertex2f(-0.08f * scale, -0.10f * scale);
+        glVertex2f(-0.07f * scale, -0.08f * scale);
+
+        glVertex2f(-0.02f * scale, -0.08f * scale);
+        glVertex2f(-0.02f * scale, -0.10f * scale);
+        glVertex2f(-0.018f * scale, -0.08f * scale);
+
+        glVertex2f(0.018f * scale, -0.08f * scale);
+        glVertex2f(0.02f * scale, -0.10f * scale);
+        glVertex2f(0.02f * scale, -0.08f * scale);
+
+        glVertex2f(0.07f * scale, -0.08f * scale);
+        glVertex2f(0.08f * scale, -0.10f * scale);
+        glVertex2f(0.08f * scale, -0.08f * scale);
+    glEnd();
+}
+
+void handleSpecialKeypress(int key, int x, int y){
+    if (key == GLUT_KEY_LEFT){
+        if(shooter_x > shooter_min_x){
+            shooter_x -= 0.05;
+        }
+    }
+    else if (key == GLUT_KEY_RIGHT){
+        if(shooter_x < shooter_max_x){
+            shooter_x += 0.05;
+        }
+    }
+}
+
+void drawBullet(){
+    glPushMatrix();
+        glColor3f(1.0f, 1.0f, 0.8f);
+        glBegin(GL_QUADS);
+            glVertex2f(-0.01f, 0.04f);
+            glVertex2f(0.01f, 0.04f);
+            glVertex2f(0.01f, -0.04f);
+            glVertex2f(-0.01f, -0.04f);
+        glEnd();
+
+        glBegin(GL_TRIANGLES);
+            glVertex2f(0.0f, 0.06f);
+            glVertex2f(-0.01f, 0.04f);
+            glVertex2f(0.01f, 0.04f);
+        glEnd();
+
+        glColor4f(0.5f, 1.0f, 0.2f, 0.3f);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        glBegin(GL_QUADS);
+            glVertex2f(-0.02f, 0.05f);
+            glVertex2f(0.02f, 0.05f);
+            glVertex2f(0.02f, -0.05f);
+            glVertex2f(-0.02f, -0.05f);
+        glEnd();
+
+        glDisable(GL_BLEND);
+    glPopMatrix();
+}
 
 void new_update(int value){
     for(int i=0;i<=frontCount;i++){
@@ -474,7 +887,6 @@ void new_update(int value){
             frontCount--;
             life--;
         }
-
     }
 
     if(life<=0){
@@ -504,6 +916,12 @@ void new_update(int value){
                 frontCount--;
                 bullet_stat[j]=0;
                 points++;
+
+
+                if(points >= pointsForNextLevel) {
+                    level++;
+                    pointsForNextLevel += 10;
+                }
             }
         }
     }
@@ -579,7 +997,7 @@ void drawScene(){
                 if(enemy_vel[i]!=0){
                     glPushMatrix();
                         glTranslatef(enemy_x[i],enemy_y[i],0.0f);
-                        drawEnemy();
+                        drawEnemy(enemy_type[i]);
                     glPopMatrix();
                 }
             }
@@ -587,6 +1005,7 @@ void drawScene(){
             glPushMatrix();
                 score();
                 showLife();
+                showLevel();
             glPopMatrix();
         glPopMatrix();
     }
@@ -597,9 +1016,12 @@ void drawScene(){
 int main(int argc, char **argv){
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
-    glutInitWindowSize(1000, 700);
-    glutInitWindowPosition(220, 50);
+    int screenWidth = glutGet(GLUT_SCREEN_WIDTH);
+    int screenHeight = glutGet(GLUT_SCREEN_HEIGHT);
+    glutInitWindowSize(screenWidth, screenHeight);
+    glutInitWindowPosition(0, 0);
     glutCreateWindow("Space Shooter Game");
+    glutFullScreen();
     loadHighScore();
     glutDisplayFunc(drawScene);
     glutIdleFunc(drawScene);
