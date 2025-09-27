@@ -10,6 +10,10 @@
 
 using namespace std;
 
+GLuint backgroundTexture;
+int backgroundWidth, backgroundHeight;
+unsigned char* backgroundImage = NULL;
+
 double shooter_x = 0.0f;
 double shooter_y = -1.9f;
 double shooter_min_x = -1.9f;
@@ -49,6 +53,103 @@ int pointsForNextLevel = 10;
 
 double mousex;
 double mousey;
+
+
+void generateSpaceBackground() {
+    backgroundWidth = 512;
+    backgroundHeight = 512;
+
+    if (backgroundImage) free(backgroundImage);
+    backgroundImage = (unsigned char*)malloc(backgroundWidth * backgroundHeight * 3);
+
+    for (int i = 0; i < backgroundWidth * backgroundHeight * 3; i += 3) {
+        backgroundImage[i] = 10;
+        backgroundImage[i+1] = 15;
+        backgroundImage[i+2] = 40;
+    }
+
+    for (int i = 0; i < 500; i++) {
+        int x = rand() % backgroundWidth;
+        int y = rand() % backgroundHeight;
+        int pixel = (y * backgroundWidth + x) * 3;
+
+        int brightness = 150 + rand() % 106;
+        backgroundImage[pixel] = brightness;
+        backgroundImage[pixel+1] = brightness;
+        backgroundImage[pixel+2] = brightness;
+
+        if (rand() % 10 == 0) {
+            int color = rand() % 3;
+            if (color == 0) {
+                backgroundImage[pixel] = 200;
+                backgroundImage[pixel+1] = 100;
+                backgroundImage[pixel+2] = 100;
+            } else if (color == 1) {
+                backgroundImage[pixel] = 100;
+                backgroundImage[pixel+1] = 100;
+                backgroundImage[pixel+2] = 200;
+            }
+        }
+    }
+
+    for (int i = 0; i < 5; i++) {
+        int centerX = rand() % backgroundWidth;
+        int centerY = rand() % backgroundHeight;
+        int radius = 30 + rand() % 50;
+        int r = 30 + rand() % 50;
+        int g = 20 + rand() % 40;
+        int b = 40 + rand() % 60;
+
+        for (int dy = -radius; dy <= radius; dy++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                if (dx*dx + dy*dy <= radius*radius) {
+                    int px = centerX + dx;
+                    int py = centerY + dy;
+
+                    if (px >= 0 && px < backgroundWidth && py >= 0 && py < backgroundHeight) {
+                        int pixel = (py * backgroundWidth + px) * 3;
+                        float distance = sqrt(dx*dx + dy*dy) / radius;
+                        float intensity = (1.0 - distance) * 0.3;
+
+                        backgroundImage[pixel] = min(255, backgroundImage[pixel] + (int)(r * intensity));
+                        backgroundImage[pixel+1] = min(255, backgroundImage[pixel+1] + (int)(g * intensity));
+                        backgroundImage[pixel+2] = min(255, backgroundImage[pixel+2] + (int)(b * intensity));
+                    }
+                }
+            }
+        }
+    }
+}
+
+void loadBackgroundTexture() {
+    generateSpaceBackground();
+
+    glGenTextures(1, &backgroundTexture);
+    glBindTexture(GL_TEXTURE_2D, backgroundTexture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, backgroundWidth, backgroundHeight, 0,
+                 GL_RGB, GL_UNSIGNED_BYTE, backgroundImage);
+}
+
+void drawSpaceBackground() {
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, backgroundTexture);
+
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-3.0f, -3.0f, -5.5f);
+        glTexCoord2f(2.0f, 0.0f); glVertex3f(3.0f, -3.0f, -5.5f);
+        glTexCoord2f(2.0f, 2.0f); glVertex3f(3.0f, 3.0f, -5.5f);
+        glTexCoord2f(0.0f, 2.0f); glVertex3f(-3.0f, 3.0f, -5.5f);
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+}
 
 void loadHighScore() {
     FILE *file = fopen("highscore.txt", "r");
@@ -974,7 +1075,8 @@ void drawScene(){
     else if(game_play == 1){
         generateEnemies();
 
-        glClearColor(0.42, 0.38, 0.55, 1.0);
+        drawSpaceBackground();
+
         glPushMatrix();
             glTranslatef(0.0f, 0.0f, -5.0f);
 
@@ -1015,13 +1117,18 @@ void drawScene(){
 
 int main(int argc, char **argv){
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     int screenWidth = glutGet(GLUT_SCREEN_WIDTH);
     int screenHeight = glutGet(GLUT_SCREEN_HEIGHT);
     glutInitWindowSize(screenWidth, screenHeight);
     glutInitWindowPosition(0, 0);
     glutCreateWindow("Space Shooter Game");
     glutFullScreen();
+
+    glEnable(GL_DEPTH_TEST);
+
+    loadBackgroundTexture();
+
     loadHighScore();
     glutDisplayFunc(drawScene);
     glutIdleFunc(drawScene);
@@ -1031,5 +1138,8 @@ int main(int argc, char **argv){
     glutReshapeFunc(handleResize);
     glutTimerFunc(5, new_update, 0);
     glutMainLoop();
+
+    if(backgroundImage) free(backgroundImage);
+
     return 0;
 }
