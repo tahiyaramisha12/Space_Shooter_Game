@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1758975348 source:e:\l-3 s-1\computer graphics\lab work\project opengl\space_shooter\main.cpp
+1762359854 source:e:\l-3 s-1\computer graphics\lab work\project opengl\space_shooter\main.cpp
 	<GL/gl.h>
 	<GL/glut.h>
 	<iostream>
@@ -7,6 +7,8 @@
 	<string.h>
 	<stdio.h>
 	<math.h>
+	<windows.h>
+	<mmsystem.h>
 
 1301111162 c:\program files (x86)\codeblocks\mingw\include\windows.h
 	<winresrc.h>
